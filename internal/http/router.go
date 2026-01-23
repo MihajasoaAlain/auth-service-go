@@ -2,8 +2,10 @@ package httpapi
 
 import "github.com/go-chi/chi/v5"
 
-func Router(api AuthAPI) *chi.Mux {
+func Router(api AuthAPI, corsAllowedOrigins []string) *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Use(CORSMiddleware(corsAllowedOrigins))
 
 	r.Post("/auth/register", api.Register)
 	r.Post("/auth/login", api.Login)
