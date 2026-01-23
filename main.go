@@ -34,5 +34,5 @@ func main() {
 	}
 
 	log.Println("Auth service running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", httpapi.Router(api)))
+	log.Fatal(http.ListenAndServe(":8080", httpapi.Router(api, cfg.CORSAllowedOrigins)))
 }
