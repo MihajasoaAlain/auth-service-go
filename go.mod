@@ -3,6 +3,7 @@ module auth-service
 go 1.25.6
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.4 // indirect

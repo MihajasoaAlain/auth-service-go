@@ -22,6 +22,8 @@ type AuthAPI struct {
 	JWT        auth.JWT
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
+	OAuth      OAuthStore
+	Google     GoogleAuth
 }
 
 type creds struct {
