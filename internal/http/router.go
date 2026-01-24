@@ -9,6 +9,8 @@ func Router(api AuthAPI, corsAllowedOrigins []string) *chi.Mux {
 
 	r.Post("/auth/register", api.Register)
 	r.Post("/auth/login", api.Login)
+	r.Post("/auth/refresh", api.Refresh)
+	r.Post("/auth/logout", api.Logout)
 
 	r.Group(func(pr chi.Router) {
 		pr.Use(api.AuthMiddleware)
