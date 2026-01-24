@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -12,9 +13,15 @@ import (
 )
 
 type AuthAPI struct {
-	Users     store.Store
-	JWT       auth.JWT
-	AccessTTL time.Duration
+	Users  store.Store
+	Tokens interface {
+		SaveRefreshToken(ctx context.Context, userID string, rawToken string, exp time.Time) error
+		ValidateRefreshToken(ctx context.Context, rawToken string) (string, bool)
+		RevokeRefreshToken(ctx context.Context, rawToken string) error
+	}
+	JWT        auth.JWT
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
 
 type creds struct {
@@ -71,14 +78,80 @@ func (a AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _ := a.JWT.SignAccess(user.ID, a.AccessTTL)
+	access, err := a.JWT.SignAccess(user.ID, a.AccessTTL)
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	refresh, err := auth.NewRefreshToken()
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	exp := time.Now().Add(a.RefreshTTL)
+	if err := a.Tokens.SaveRefreshToken(r.Context(), user.ID, refresh, exp); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
 
-	writeJSON(w, 200, map[string]string{
-		"access_token": token,
+	writeJSON(w, 200, map[string]any{
+		"access_token":  access,
+		"expires_in":    int(a.AccessTTL.Seconds()),
+		"refresh_token": refresh,
 	})
 }
 
 func (a AuthAPI) Me(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID").(string)
 	writeJSON(w, 200, map[string]string{"user_id": userID})
+}
+
+func (a AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.RefreshToken == "" {
+		http.Error(w, "bad request", 400)
+		return
+	}
+
+	userID, ok := a.Tokens.ValidateRefreshToken(r.Context(), body.RefreshToken)
+	if !ok {
+		http.Error(w, "invalid refresh token", 401)
+		return
+	}
+
+	_ = a.Tokens.RevokeRefreshToken(r.Context(), body.RefreshToken)
+
+	newRefresh, err := auth.NewRefreshToken()
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	_ = a.Tokens.SaveRefreshToken(r.Context(), userID, newRefresh, time.Now().Add(a.RefreshTTL))
+
+	access, err := a.JWT.SignAccess(userID, a.AccessTTL)
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
+	writeJSON(w, 200, map[string]any{
+		"access_token":  access,
+		"expires_in":    int(a.AccessTTL.Seconds()),
+		"refresh_token": newRefresh,
+	})
+}
+
+func (a AuthAPI) Logout(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.RefreshToken == "" {
+		http.Error(w, "bad request", 400)
+		return
+	}
+
+	_ = a.Tokens.RevokeRefreshToken(r.Context(), body.RefreshToken)
+	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
