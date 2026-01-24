@@ -22,15 +22,19 @@ func main() {
 	cfg := config.Load()
 
 	dbPool := db.Connect(cfg.DatabaseURL)
+
 	userStore := postgres.UserStore{DB: dbPool}
+	tokenStore := postgres.TokenStore{DB: dbPool}
 
 	api := httpapi.AuthAPI{
-		Users: userStore,
+		Users:  userStore,
+		Tokens: tokenStore,
 		JWT: auth.JWT{
 			Secret: []byte(cfg.JWTSecret),
 			Issuer: cfg.JWTIssuer,
 		},
-		AccessTTL: 15 * time.Minute,
+		AccessTTL:  15 * time.Minute,
+		RefreshTTL: 14 * 24 * time.Hour,
 	}
 
 	log.Println("Auth service running on :8080")
