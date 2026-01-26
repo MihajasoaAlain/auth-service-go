@@ -24,6 +24,7 @@ type AuthAPI struct {
 	RefreshTTL time.Duration
 	OAuth      OAuthStore
 	Google     GoogleAuth
+	Github     GitHubAuth
 }
 
 type creds struct {

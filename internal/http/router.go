@@ -13,6 +13,8 @@ func Router(api AuthAPI, corsAllowedOrigins []string) *chi.Mux {
 	r.Post("/auth/logout", api.Logout)
 	r.Get("/auth/google/start", api.GoogleStart)
 	r.Get("/auth/google/callback", api.GoogleCallback)
+	r.Get("/auth/github/start", api.GitHubStart)
+	r.Get("/auth/github/callback", api.GitHubCallback)
 
 	r.Group(func(pr chi.Router) {
 		pr.Use(api.AuthMiddleware)
