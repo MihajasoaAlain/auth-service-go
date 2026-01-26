@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
 	"golang.org/x/oauth2/google"
 
 	"auth-service/internal/auth"
@@ -52,12 +53,23 @@ func main() {
 		Verifier:  oidcProvider.Verifier(&oidc.Config{ClientID: googleClientID}),
 		WebOrigin: webOrigin,
 	}
+	githubAuth := httpapi.GitHubAuth{
+		OAuthConfig: oauth2.Config{
+			ClientID:     cfg.GithubClientID,
+			ClientSecret: cfg.GithubClientSecret,
+			RedirectURL:  cfg.GithubRedirectURL,
+			Endpoint:     github.Endpoint,
+			Scopes:       []string{"read:user", "user:email"},
+		},
+		WebOrigin: webOrigin,
+	}
 
 	api := httpapi.AuthAPI{
 		Users:  userStore,
 		Tokens: tokenStore,
 		OAuth:  oauthStore,
 		Google: googleAuth,
+		Github: githubAuth,
 
 		JWT: auth.JWT{
 			Secret: []byte(cfg.JWTSecret),
