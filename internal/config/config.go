@@ -11,6 +11,9 @@ type Config struct {
 	JWTSecret          string
 	JWTIssuer          string
 	CORSAllowedOrigins []string
+	GithubClientID     string
+	GithubClientSecret string
+	GithubRedirectURL  string
 }
 
 func Load() Config {
@@ -18,6 +21,9 @@ func Load() Config {
 		DatabaseURL:        os.Getenv("DATABASE_URL"),
 		JWTSecret:          os.Getenv("JWT_SECRET"),
 		JWTIssuer:          os.Getenv("JWT_ISSUER"),
+		GithubClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		GithubRedirectURL:  os.Getenv("GITHUB_REDIRECT_URL"),
 		CORSAllowedOrigins: parseEnvList(os.Getenv("CORS_ALLOWED_ORIGINS")),
 	}
 
