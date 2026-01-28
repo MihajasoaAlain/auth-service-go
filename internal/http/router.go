@@ -15,6 +15,8 @@ func Router(api AuthAPI, corsAllowedOrigins []string) *chi.Mux {
 	r.Post("/auth/verify/confirm", api.VerifyConfirm)
 	r.Post("/auth/password/forgot", api.PasswordForgot)
 	r.Post("/auth/password/reset", api.PasswordReset)
+	r.Get("/openapi.yaml", api.OpenAPISpec)
+	r.Get("/docs", api.SwaggerUI)
 	r.Get("/auth/google/start", api.GoogleStart)
 	r.Get("/auth/google/callback", api.GoogleCallback)
 	r.Get("/auth/github/start", api.GitHubStart)
