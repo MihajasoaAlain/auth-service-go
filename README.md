@@ -157,6 +157,8 @@ The service will start on `http://localhost:8080`.
 | `POST` | `/auth/password/forgot` | Start password reset | No |
 | `POST` | `/auth/password/reset` | Reset password with token | No |
 | `GET` | `/me` | Get current user info | Yes |
+| `GET` | `/openapi.yaml` | OpenAPI specification | No |
+| `GET` | `/docs` | Swagger UI | No |
 
 ### OAuth2
 
