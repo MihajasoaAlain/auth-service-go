@@ -46,3 +46,45 @@ func (s TokenStore) RevokeRefreshToken(ctx context.Context, rawToken string) err
 	)
 	return err
 }
+
+func (s TokenStore) SaveEmailVerificationToken(ctx context.Context, userID string, rawToken string, exp time.Time) error {
+	_, err := s.DB.Exec(ctx,
+		`INSERT INTO email_verification_tokens (token_hash,user_id,expires_at) VALUES ($1,$2,$3)`,
+		hashToken(rawToken), userID, exp,
+	)
+	return err
+}
+
+func (s TokenStore) ConsumeEmailVerificationToken(ctx context.Context, rawToken string) (userID string, ok bool) {
+	err := s.DB.QueryRow(ctx,
+		`UPDATE email_verification_tokens
+		    SET used_at=now()
+		  WHERE token_hash=$1
+		    AND used_at IS NULL
+		    AND expires_at > now()
+		RETURNING user_id`,
+		hashToken(rawToken),
+	).Scan(&userID)
+	return userID, err == nil
+}
+
+func (s TokenStore) SavePasswordResetToken(ctx context.Context, userID string, rawToken string, exp time.Time) error {
+	_, err := s.DB.Exec(ctx,
+		`INSERT INTO password_reset_tokens (token_hash,user_id,expires_at) VALUES ($1,$2,$3)`,
+		hashToken(rawToken), userID, exp,
+	)
+	return err
+}
+
+func (s TokenStore) ConsumePasswordResetToken(ctx context.Context, rawToken string) (userID string, ok bool) {
+	err := s.DB.QueryRow(ctx,
+		`UPDATE password_reset_tokens
+		    SET used_at=now()
+		  WHERE token_hash=$1
+		    AND used_at IS NULL
+		    AND expires_at > now()
+		RETURNING user_id`,
+		hashToken(rawToken),
+	).Scan(&userID)
+	return userID, err == nil
+}
