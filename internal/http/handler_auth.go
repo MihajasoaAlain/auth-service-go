@@ -18,10 +18,16 @@ type AuthAPI struct {
 		SaveRefreshToken(ctx context.Context, userID string, rawToken string, exp time.Time) error
 		ValidateRefreshToken(ctx context.Context, rawToken string) (string, bool)
 		RevokeRefreshToken(ctx context.Context, rawToken string) error
+		SaveEmailVerificationToken(ctx context.Context, userID string, rawToken string, exp time.Time) error
+		ConsumeEmailVerificationToken(ctx context.Context, rawToken string) (string, bool)
+		SavePasswordResetToken(ctx context.Context, userID string, rawToken string, exp time.Time) error
+		ConsumePasswordResetToken(ctx context.Context, rawToken string) (string, bool)
 	}
 	JWT        auth.JWT
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
+	VerifyTTL  time.Duration
+	ResetTTL   time.Duration
 	OAuth      OAuthStore
 	Google     GoogleAuth
 	Github     GitHubAuth
@@ -30,6 +36,19 @@ type AuthAPI struct {
 type creds struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type emailBody struct {
+	Email string `json:"email"`
+}
+
+type tokenBody struct {
+	Token string `json:"token"`
+}
+
+type resetBody struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -62,9 +81,20 @@ func (a AuthAPI) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	verifyToken, err := auth.NewOneTimeToken()
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	if err := a.Tokens.SaveEmailVerificationToken(r.Context(), user.ID, verifyToken, time.Now().Add(a.VerifyTTL)); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
 	writeJSON(w, 201, map[string]string{
-		"id":    user.ID,
-		"email": user.Email,
+		"id":           user.ID,
+		"email":        user.Email,
+		"verify_token": verifyToken,
 	})
 }
 
@@ -78,6 +108,10 @@ func (a AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := a.Users.GetUserByEmail(r.Context(), c.Email)
 	if err != nil || !auth.CheckPassword(user.PasswordHash, c.Password) {
 		http.Error(w, "invalid credentials", 401)
+		return
+	}
+	if user.EmailVerifiedAt == nil {
+		http.Error(w, "email not verified", 403)
 		return
 	}
 
@@ -156,5 +190,104 @@ func (a AuthAPI) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = a.Tokens.RevokeRefreshToken(r.Context(), body.RefreshToken)
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (a AuthAPI) VerifyStart(w http.ResponseWriter, r *http.Request) {
+	var body emailBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+
+	user, err := a.Users.GetUserByEmail(r.Context(), body.Email)
+	if err != nil || user.EmailVerifiedAt != nil {
+		writeJSON(w, 200, map[string]string{"status": "ok"})
+		return
+	}
+
+	token, err := auth.NewOneTimeToken()
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	if err := a.Tokens.SaveEmailVerificationToken(r.Context(), user.ID, token, time.Now().Add(a.VerifyTTL)); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
+	writeJSON(w, 200, map[string]string{"status": "ok", "verify_token": token})
+}
+
+func (a AuthAPI) VerifyConfirm(w http.ResponseWriter, r *http.Request) {
+	var body tokenBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Token == "" {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+
+	userID, ok := a.Tokens.ConsumeEmailVerificationToken(r.Context(), body.Token)
+	if !ok {
+		http.Error(w, "invalid or expired token", 400)
+		return
+	}
+
+	if err := a.Users.SetEmailVerified(r.Context(), userID, time.Now()); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
+	writeJSON(w, 200, map[string]string{"status": "ok"})
+}
+
+func (a AuthAPI) PasswordForgot(w http.ResponseWriter, r *http.Request) {
+	var body emailBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Email == "" {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+
+	user, err := a.Users.GetUserByEmail(r.Context(), body.Email)
+	if err != nil || user.PasswordHash == "" {
+		writeJSON(w, 200, map[string]string{"status": "ok"})
+		return
+	}
+
+	token, err := auth.NewOneTimeToken()
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	if err := a.Tokens.SavePasswordResetToken(r.Context(), user.ID, token, time.Now().Add(a.ResetTTL)); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
+	writeJSON(w, 200, map[string]string{"status": "ok", "reset_token": token})
+}
+
+func (a AuthAPI) PasswordReset(w http.ResponseWriter, r *http.Request) {
+	var body resetBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Token == "" || body.NewPassword == "" {
+		http.Error(w, "invalid body", 400)
+		return
+	}
+
+	userID, ok := a.Tokens.ConsumePasswordResetToken(r.Context(), body.Token)
+	if !ok {
+		http.Error(w, "invalid or expired token", 400)
+		return
+	}
+
+	hash, err := auth.HashPassword(body.NewPassword)
+	if err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+	if err := a.Users.SetPasswordHash(r.Context(), userID, hash); err != nil {
+		http.Error(w, "server error", 500)
+		return
+	}
+
 	writeJSON(w, 200, map[string]string{"status": "ok"})
 }
