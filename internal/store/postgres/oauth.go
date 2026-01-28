@@ -50,8 +50,8 @@ func (s OAuthStore) GetUserIDByEmail(ctx context.Context, email string) (string,
 
 func (s OAuthStore) CreateUserBasic(ctx context.Context, userID, email, name, avatar string) error {
 	_, err := s.DB.Exec(ctx,
-		`INSERT INTO users (id,email,name,avatar_url)
-		 VALUES ($1,$2,$3,$4)`,
+		`INSERT INTO users (id,email,name,avatar_url,email_verified_at)
+		 VALUES ($1,$2,$3,$4,now())`,
 		userID, email, name, avatar,
 	)
 	return err

@@ -77,6 +77,8 @@ func main() {
 		},
 		AccessTTL:  15 * time.Minute,
 		RefreshTTL: 14 * 24 * time.Hour,
+		VerifyTTL:  24 * time.Hour,
+		ResetTTL:   1 * time.Hour,
 	}
 
 	log.Println("Auth service running on :8080")
