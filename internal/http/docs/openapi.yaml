@@ -1,0 +1,335 @@
+openapi: 3.0.3
+info:
+  title: Auth Service API
+  version: 1.0.0
+  description: JWT auth service with email/password and OAuth.
+servers:
+  - url: http://localhost:8080
+security:
+  - BearerAuth: []
+tags:
+  - name: Auth
+  - name: OAuth
+  - name: User
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /auth/verify/start:
+    post:
+      tags: [Auth]
+      summary: Request email verification token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyStartResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/verify/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm email verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/password/forgot:
+    post:
+      tags: [Auth]
+      summary: Request password reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetStartResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /auth/google/start:
+    get:
+      tags: [OAuth]
+      summary: Start Google OAuth flow
+      responses:
+        "302":
+          description: Redirect to Google OAuth consent
+  /auth/google/callback:
+    get:
+      tags: [OAuth]
+      summary: Google OAuth callback
+      responses:
+        "302":
+          description: Redirect to web app with tokens
+  /auth/github/start:
+    get:
+      tags: [OAuth]
+      summary: Start GitHub OAuth flow
+      responses:
+        "302":
+          description: Redirect to GitHub OAuth consent
+  /auth/github/callback:
+    get:
+      tags: [OAuth]
+      summary: GitHub OAuth callback
+      responses:
+        "302":
+          description: Redirect to web app with tokens
+  /me:
+    get:
+      tags: [User]
+      summary: Get current user info
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /openapi.yaml:
+    get:
+      tags: [User]
+      summary: OpenAPI specification
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /docs:
+    get:
+      tags: [User]
+      summary: Swagger UI
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+    RegisterResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        verify_token: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    LoginResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        expires_in: { type: integer, format: int32 }
+        refresh_token: { type: string }
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+    EmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    TokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+    PasswordResetRequest:
+      type: object
+      required: [token, new_password]
+      properties:
+        token: { type: string }
+        new_password: { type: string, minLength: 6 }
+    VerifyStartResponse:
+      type: object
+      properties:
+        status: { type: string }
+        verify_token: { type: string }
+    ResetStartResponse:
+      type: object
+      properties:
+        status: { type: string }
+        reset_token: { type: string }
+    StatusResponse:
+      type: object
+      properties:
+        status: { type: string }
+    MeResponse:
+      type: object
+      properties:
+        user_id: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        text/plain:
+          schema:
+            type: string
+    Unauthorized:
+      description: Unauthorized
+      content:
+        text/plain:
+          schema:
+            type: string
+    Forbidden:
+      description: Forbidden
+      content:
+        text/plain:
+          schema:
+            type: string
+    Conflict:
+      description: Conflict
+      content:
+        text/plain:
+          schema:
+            type: string
+    ServerError:
+      description: Server error
+      content:
+        text/plain:
+          schema:
+            type: string
