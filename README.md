@@ -7,6 +7,8 @@ A lightweight authentication microservice written in Go, providing JWT-based aut
 - 🔐 **JWT Authentication** - Secure access tokens with configurable expiration
 - 🔄 **Refresh Tokens** - Secure token rotation with hashed storage
 - 📧 **Email/Password Registration & Login**
+- ✅ **Email Verification** - One-time tokens with expiration
+- 🔑 **Password Reset** - One-time tokens with expiration
 - 🌐 **OAuth2 Integration**
   - Google (OpenID Connect)
   - GitHub
@@ -150,6 +152,10 @@ The service will start on `http://localhost:8080`.
 | `POST` | `/auth/login` | Login with email/password | No |
 | `POST` | `/auth/refresh` | Refresh access token | No |
 | `POST` | `/auth/logout` | Revoke refresh token | No |
+| `POST` | `/auth/verify/start` | Start email verification | No |
+| `POST` | `/auth/verify/confirm` | Confirm email verification | No |
+| `POST` | `/auth/password/forgot` | Start password reset | No |
+| `POST` | `/auth/password/reset` | Reset password with token | No |
 | `GET` | `/me` | Get current user info | Yes |
 
 ### OAuth2
