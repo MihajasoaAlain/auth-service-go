@@ -1,6 +1,6 @@
 module auth-service
 
-go 1.25.6
+go 1.25
 
 require (
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
