@@ -8,13 +8,166 @@
       rel="stylesheet"
       href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
     <style>
-      body { margin: 0; background: #f6f7fb; }
-      #swagger-ui { max-width: 1200px; margin: 0 auto; }
+      :root {
+        --bg-1: #f7f7f2;
+        --bg-2: #e8ecf2;
+        --ink: #1a1f2b;
+        --muted: #5c6470;
+        --accent: #d24a3d;
+        --accent-2: #2f6b6e;
+        --card: #ffffff;
+        --border: rgba(20, 24, 32, 0.08);
+        --shadow: 0 20px 50px rgba(10, 12, 20, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+        background:
+          radial-gradient(1000px 600px at 10% -10%, #fff6e8 0%, transparent 60%),
+          radial-gradient(900px 500px at 100% 0%, #e9f5f6 0%, transparent 60%),
+          linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      }
+      .page {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 24px 20px 60px;
+      }
+      .hero {
+        display: grid;
+        gap: 14px;
+        margin: 10px 0 24px;
+        padding: 20px 22px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .hero .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .chip {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #f7f8fb;
+        color: var(--ink);
+        font-weight: 500;
+      }
+      #swagger-ui {
+        margin: 0 auto;
+        background: var(--card);
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        padding: 12px 6px 30px;
+      }
+
+      /* Swagger UI theming */
+      .swagger-ui .topbar { display: none; }
+      .swagger-ui .info { margin: 20px 20px 12px; }
+      .swagger-ui .info .title {
+        font-size: 22px;
+        font-weight: 600;
+        font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+      }
+      .swagger-ui .info .base-url {
+        margin-top: 6px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .swagger-ui .opblock {
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        box-shadow: none;
+        margin: 12px 16px;
+      }
+      .swagger-ui .opblock-summary {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        border-radius: 14px 14px 0 0;
+      }
+      .swagger-ui .opblock .opblock-summary-method {
+        border-radius: 10px;
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      .swagger-ui .opblock .opblock-summary-path {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+      }
+      .swagger-ui .opblock-tag {
+        margin: 22px 16px 8px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .swagger-ui .btn.authorize {
+        border-radius: 10px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+      }
+      .swagger-ui .btn.execute {
+        border-radius: 10px;
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .swagger-ui .btn.cancel {
+        border-radius: 10px;
+      }
+      .swagger-ui .scheme-container {
+        margin: 12px 16px 18px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: #f7f8fb;
+        border: 1px solid var(--border);
+        box-shadow: none;
+      }
+      .swagger-ui .responses-wrapper,
+      .swagger-ui .parameters-container,
+      .swagger-ui .request-body,
+      .swagger-ui .tab {
+        font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+      }
+      .swagger-ui .response-col_status { color: var(--accent-2); }
+      .swagger-ui textarea,
+      .swagger-ui input[type="text"] {
+        border-radius: 8px !important;
+        border-color: var(--border) !important;
+      }
     </style>
   </head>
   <body>
-    <div id="swagger-ui"></div>
+    <div class="page">
+      <section class="hero">
+        <h1>Auth Service API</h1>
+        <p>JWT auth endpoints for email/password and OAuth flows.</p>
+        <div class="meta">
+          <span class="chip">Version 1.0.0</span>
+          <span>Use the <strong>Authorize</strong> button to add your Bearer token.</span>
+        </div>
+      </section>
+      <div id="swagger-ui"></div>
+    </div>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
       window.onload = () => {
@@ -23,6 +176,12 @@
           dom_id: "#swagger-ui",
           deepLinking: true,
           persistAuthorization: true,
+          displayRequestDuration: true,
+          filter: true,
+          docExpansion: "list",
+          defaultModelsExpandDepth: -1,
+          tagsSorter: "alpha",
+          operationsSorter: "alpha",
         });
       };
     </script>
